@@ -22,6 +22,17 @@ Route::get('/category/{slug}', [BlogController::class, 'category'])->name('blog.
 Route::get('/tag/{slug}', [BlogController::class, 'tag'])->name('blog.tag');
 Route::get('/page/{slug}', [BlogController::class, 'page'])->name('blog.page');
 
+// Serve legacy public storage files safely
+Route::get('/storage/{path}', function (string $path) {
+    $filePath = storage_path('app/public/'.$path);
+    if (! file_exists($filePath)) {
+        abort(404);
+    }
+    $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+
+    return response()->file($filePath, ['Content-Type' => $mime]);
+})->where('path', '.*')->name('storage.local');
+
 /*
 |--------------------------------------------------------------------------
 | Admin Authentication Routes

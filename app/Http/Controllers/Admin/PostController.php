@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -63,8 +64,8 @@ class PostController extends Controller
             'category_id' => 'required|exists:categories,id',
             'excerpt' => 'nullable|string|max:500',
             'content' => 'required|string',
-            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
-            'featured_image_url' => 'nullable|url:http,https|max:500',
+            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:10240',
+            'featured_image_url' => 'nullable|url:http,https|max:2000',
             'software_version' => 'nullable|string|max:100',
             'file_size' => 'nullable|string|max:50',
             'license_type' => 'nullable|string|max:100',
@@ -93,7 +94,7 @@ class PostController extends Controller
         // Handle Image
         $imagePath = null;
         if ($request->hasFile('featured_image_file')) {
-            $imagePath = $request->file('featured_image_file')->store('posts', 'public');
+            $imagePath = $this->processUploadedImage($request->file('featured_image_file'));
         } elseif (! empty($validated['featured_image_url'])) {
             $imagePath = $validated['featured_image_url'];
         }
@@ -164,8 +165,8 @@ class PostController extends Controller
             'category_id' => 'required|exists:categories,id',
             'excerpt' => 'nullable|string|max:500',
             'content' => 'required|string',
-            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif|max:5120',
-            'featured_image_url' => 'nullable|url:http,https|max:500',
+            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:10240',
+            'featured_image_url' => 'nullable|url:http,https|max:2000',
             'software_version' => 'nullable|string|max:100',
             'file_size' => 'nullable|string|max:50',
             'license_type' => 'nullable|string|max:100',
@@ -193,11 +194,11 @@ class PostController extends Controller
         // Handle Image
         $imagePath = $post->featured_image;
         if ($request->hasFile('featured_image_file')) {
-            if ($post->featured_image && ! Str::startsWith($post->featured_image, ['http://', 'https://'])) {
+            if ($post->featured_image && ! Str::startsWith($post->featured_image, ['http://', 'https://', 'data:image/'])) {
                 Storage::disk('public')->delete($post->featured_image);
             }
-            $imagePath = $request->file('featured_image_file')->store('posts', 'public');
-        } elseif (! empty($validated['featured_image_url'])) {
+            $imagePath = $this->processUploadedImage($request->file('featured_image_file'));
+        } elseif ($request->filled('featured_image_url')) {
             $imagePath = $validated['featured_image_url'];
         }
 
@@ -285,7 +286,60 @@ class PostController extends Controller
     }
 
     /**
-     * Sanitize HTML content to prevent stored XSS attacks.
+     * Process uploaded image: resize, optimize, and encode as base64 Data URI
+     * for permanent persistence on serverless Vercel and TiDB Cloud.
+     */
+    protected function processUploadedImage(UploadedFile $file): string
+    {
+        $mime = $file->getMimeType() ?: 'image/jpeg';
+        $contents = file_get_contents($file->getRealPath());
+
+        // Optimize if GD extension is loaded and file is a bitmap
+        if (extension_loaded('gd') && function_exists('imagecreatefromstring') && $mime !== 'image/svg+xml') {
+            try {
+                $img = @imagecreatefromstring($contents);
+                if ($img !== false) {
+                    $origWidth = imagesx($img);
+                    $origHeight = imagesy($img);
+                    $maxWidth = 1000;
+
+                    if ($origWidth > $maxWidth) {
+                        $newWidth = $maxWidth;
+                        $newHeight = (int) ($origHeight * ($maxWidth / $origWidth));
+                        $resized = imagecreatetruecolor($newWidth, $newHeight);
+
+                        imagealphablending($resized, false);
+                        imagesavealpha($resized, true);
+                        $transparent = imagecolorallocatealpha($resized, 255, 255, 255, 127);
+                        imagefilledrectangle($resized, 0, 0, $newWidth, $newHeight, $transparent);
+
+                        imagecopyresampled($resized, $img, 0, 0, 0, 0, $newWidth, $newHeight, $origWidth, $origHeight);
+                        imagedestroy($img);
+                        $img = $resized;
+                    }
+
+                    ob_start();
+                    if (function_exists('imagewebp')) {
+                        imagewebp($img, null, 85);
+                        $contents = ob_get_clean();
+                        $mime = 'image/webp';
+                    } else {
+                        imagejpeg($img, null, 85);
+                        $contents = ob_get_clean();
+                        $mime = 'image/jpeg';
+                    }
+                    imagedestroy($img);
+                }
+            } catch (\Throwable $e) {
+                // If GD optimization fails, fallback to raw uploaded contents
+            }
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode($contents);
+    }
+
+    /**
+     * Sanitize HTML content to prevent stored XSS attacks while safely allowing images.
      */
     protected function sanitizeHtml(string $html): string
     {
@@ -296,8 +350,12 @@ class PostController extends Controller
         $clean = preg_replace('/<(iframe|object|embed|applet|form|input|button|textarea|select)\b[^>]*>/is', '', $clean);
         $clean = preg_replace('/<\/(iframe|object|embed|applet|form|textarea|select)>/is', '', $clean);
 
-        // Remove javascript: and data: pseudo-protocols
-        $clean = preg_replace('/(href|src)\s*=\s*["\']\s*(javascript|data):[^"\']*["\']/is', '$1="#"', $clean);
+        // Remove javascript: pseudo-protocol from href and src
+        $clean = preg_replace('/(href|src)\s*=\s*["\']\s*javascript:[^"\']*["\']/is', '$1="#"', $clean);
+
+        // Block non-image data: URIs (e.g. data:text/html) but allow image data: URIs
+        $clean = preg_replace('/href\s*=\s*["\']\s*data:[^"\']*["\']/is', 'href="#"', $clean);
+        $clean = preg_replace('/src\s*=\s*["\']\s*data:(?!image\/(png|jpe?g|webp|gif|svg\+xml))[^"\']*["\']/is', 'src="#"', $clean);
 
         // Remove inline event handlers (onload, onerror, onclick, etc.)
         $clean = preg_replace('/\s+on[a-z]+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/is', '', $clean);

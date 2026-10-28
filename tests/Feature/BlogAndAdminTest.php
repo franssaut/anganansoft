@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -270,5 +271,46 @@ class BlogAndAdminTest extends TestCase
 
         $response->assertRedirect(route('admin.settings.index'));
         $this->assertTrue(Hash::check('newSecretPass123', $this->admin->fresh()->password));
+    }
+
+    public function test_admin_can_create_post_with_uploaded_image(): void
+    {
+        $fakeImage = UploadedFile::fake()->image('thumbnail.jpg', 600, 400);
+
+        $response = $this->actingAs($this->admin)->post('/admin/posts', [
+            'title' => 'Post with Uploaded Image',
+            'slug' => 'post-with-uploaded-image',
+            'category_id' => $this->category->id,
+            'content' => '<p>Artikel dengan gambar terunggah.</p>',
+            'featured_image_file' => $fakeImage,
+            'status' => 'published',
+        ]);
+
+        $response->assertRedirect(route('admin.posts.index'));
+        $created = Post::where('slug', 'post-with-uploaded-image')->first();
+        $this->assertNotNull($created);
+        $this->assertStringStartsWith('data:image/', $created->featured_image);
+        $this->assertStringStartsWith('data:image/', $created->image_url);
+    }
+
+    public function test_admin_can_create_post_with_image_url_and_inline_data_image(): void
+    {
+        $inlineImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+
+        $response = $this->actingAs($this->admin)->post('/admin/posts', [
+            'title' => 'Post with Image URL and Inline Screenshot',
+            'slug' => 'post-with-image-url-and-inline-screenshot',
+            'category_id' => $this->category->id,
+            'content' => '<p>Gambar screenshot berikut: <img src="'.$inlineImage.'" alt="Test Image"></p>',
+            'featured_image_url' => 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800',
+            'status' => 'published',
+        ]);
+
+        $response->assertRedirect(route('admin.posts.index'));
+        $created = Post::where('slug', 'post-with-image-url-and-inline-screenshot')->first();
+        $this->assertNotNull($created);
+        $this->assertEquals('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800', $created->featured_image);
+        $this->assertStringContainsString('data:image/png;base64,', $created->content);
+        $this->assertStringContainsString('<img src="data:image/png;base64,', $created->content);
     }
 }

@@ -40,7 +40,7 @@
                             <label class="form-label" for="content">Isi Konten Artikel <span style="color:#ef4444;">*</span></label>
 
                             <!-- Formatting Toolbar Helper -->
-                            <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px 6px 0 0; border:1px solid var(--border); border-bottom:none; display:flex; flex-wrap:wrap; gap:6px;">
+                            <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px 6px 0 0; border:1px solid var(--border); border-bottom:none; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertTag('<b>', '</b>')"><b>B</b></button>
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertTag('<i>', '</i>')"><i>I</i></button>
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertTag('<h3>', '</h3>')">H3</button>
@@ -48,6 +48,10 @@
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertTag('<ul>\n  <li>', '</li>\n</ul>')">List</button>
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertTag('<blockquote>', '</blockquote>')"><i class="fa-solid fa-quote-left"></i></button>
                                 <button type="button" class="btn btn-sm" style="background:#fff;" onclick="insertLink()"><i class="fa-solid fa-link"></i> Link</button>
+                                <div style="width:1px; height:20px; background:var(--border); margin:0 4px;"></div>
+                                <button type="button" class="btn btn-sm" style="background:#e0f2fe; color:#0369a1; font-weight:600;" onclick="openInsertImageModal()"><i class="fa-solid fa-image"></i> Sisipkan Gambar URL</button>
+                                <button type="button" class="btn btn-sm" style="background:#dcfce7; color:#15803d; font-weight:600;" onclick="triggerContentImageUpload()"><i class="fa-solid fa-cloud-arrow-up"></i> Upload Gambar Artikel</button>
+                                <input type="file" id="content-image-input" accept="image/*" style="display:none;" onchange="handleContentImageFile(this)">
                             </div>
 
                             <textarea id="content" name="content" class="form-control" rows="12" style="border-radius:0 0 6px 6px; font-family:monospace; line-height:1.5;" placeholder="Tuliskan ulasan software, fitur-fitur, dan deskripsi lengkap di sini..." required>{{ old('content') }}</textarea>
@@ -189,6 +193,7 @@
                         <div class="form-group">
                             <label class="form-label">Upload Gambar dari Komputer</label>
                             <input type="file" name="featured_image_file" class="form-control" accept="image/*" onchange="previewUploadImage(this)">
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Format: JPG, PNG, WebP, GIF (Maks. 10MB). Otomatis dioptimalkan.</div>
                         </div>
 
                         <div style="text-align:center; font-size:11.5px; color:var(--text-muted); margin:10px 0;">— ATAU —</div>
@@ -196,7 +201,8 @@
                         <!-- Option 2: Image URL -->
                         <div class="form-group">
                             <label class="form-label">URL Gambar Eksternal</label>
-                            <input type="url" id="featured_image_url" name="featured_image_url" class="form-control" placeholder="https://images.unsplash.com/..." value="{{ old('featured_image_url') }}" onchange="previewUrlImage(this.value)">
+                            <input type="url" id="featured_image_url" name="featured_image_url" class="form-control" placeholder="https://..." value="{{ old('featured_image_url') }}" onchange="previewUrlImage(this.value)">
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Contoh: link dari Blogger, Google Drive, PostImages, Unsplash, dll.</div>
                         </div>
 
                         <!-- Image Preview Box -->
@@ -259,6 +265,60 @@
         if (url) {
             insertTag('<a href="' + url + '">', '</a>');
         }
+    }
+
+    function insertRawHtml(html) {
+        var textarea = document.getElementById('content');
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var text = textarea.value;
+        textarea.value = text.substring(0, start) + html + text.substring(end);
+        textarea.focus();
+        textarea.setSelectionRange(start + html.length, start + html.length);
+    }
+
+    function openInsertImageModal() {
+        var url = prompt('Masukkan URL gambar eksternal (https://...):', 'https://');
+        if (url && url !== 'https://' && url.trim().length > 0) {
+            var alt = prompt('Keterangan / Alt text gambar (opsional):', 'Screenshot');
+            var cleanAlt = (alt || 'Screenshot').replace(/"/g, '&quot;');
+            var imgTag = '\n<p style="text-align:center;"><img src="' + url.trim() + '" alt="' + cleanAlt + '" style="max-width:100%; height:auto; border-radius:6px; margin:15px auto; display:block; box-shadow:0 2px 8px rgba(0,0,0,0.08);"></p>\n';
+            insertRawHtml(imgTag);
+        }
+    }
+
+    function triggerContentImageUpload() {
+        document.getElementById('content-image-input').click();
+    }
+
+    function handleContentImageFile(input) {
+        if (!input.files || !input.files[0]) return;
+        var file = input.files[0];
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var maxW = 900;
+                var width = img.width;
+                var height = img.height;
+                if (width > maxW) {
+                    height = Math.round(height * (maxW / width));
+                    width = maxW;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                var dataUrl = canvas.toDataURL('image/webp', 0.85);
+                var altName = file.name.replace(/\.[^/.]+$/, "");
+                var imgTag = '\n<p style="text-align:center;"><img src="' + dataUrl + '" alt="' + altName + '" style="max-width:100%; height:auto; border-radius:6px; margin:15px auto; display:block; box-shadow:0 2px 8px rgba(0,0,0,0.08);"></p>\n';
+                insertRawHtml(imgTag);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+        input.value = '';
     }
 
     // Mirror Server Row Repeater

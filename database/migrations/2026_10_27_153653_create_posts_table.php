@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
             $table->longText('content');
-            $table->string('featured_image')->nullable();
+            $table->longText('featured_image')->nullable();
             $table->string('software_version')->nullable();
             $table->string('file_size')->nullable();
             $table->string('license_type')->nullable()->default('Full Version');

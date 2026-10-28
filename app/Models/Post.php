@@ -92,7 +92,7 @@ class Post extends Model
             return asset('images/default-thumbnail.svg');
         }
 
-        if (Str::startsWith($this->featured_image, ['http://', 'https://'])) {
+        if (Str::startsWith($this->featured_image, ['http://', 'https://', 'data:image/'])) {
             return $this->featured_image;
         }
 
