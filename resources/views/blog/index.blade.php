@@ -33,7 +33,7 @@
 
                     <div class="post-meta">
                         <span><i class="fa-regular fa-calendar"></i> {{ $post->created_at->format('d F Y') }}</span>
-                        <span><i class="fa-regular fa-user"></i> {{ $post->user ? $post->user->name : 'AngananSoft' }}</span>
+                        <span><i class="fa-regular fa-user"></i> {{ \App\Models\Setting::get('site_name', 'AngananSoft') }}</span>
                         <span><i class="fa-regular fa-eye"></i> {{ number_format($post->views) }} views</span>
                         <span><i class="fa-regular fa-comments"></i> {{ $post->comments()->where('status', 'approved')->count() }}</span>
                     </div>

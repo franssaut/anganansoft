@@ -21,7 +21,7 @@
         <!-- Post Meta -->
         <div class="post-meta" style="margin-bottom:20px; padding-bottom:14px; border-bottom:1px solid #edf2f7;">
             <span><i class="fa-regular fa-calendar"></i> {{ $post->created_at->format('d F Y') }}</span>
-            <span><i class="fa-regular fa-user"></i> Diposting oleh <strong>{{ $post->user ? $post->user->name : 'AngananSoft' }}</strong></span>
+            <span><i class="fa-regular fa-user"></i> Diposting oleh <strong>{{ \App\Models\Setting::get('site_name', 'AngananSoft') }}</strong></span>
             <span><i class="fa-regular fa-folder"></i> <a href="{{ route('blog.category', $post->category->slug) }}">{{ $post->category->name }}</a></span>
             <span><i class="fa-regular fa-eye"></i> {{ number_format($post->views) }} kali dilihat</span>
             <span><i class="fa-regular fa-comments"></i> {{ $post->comments->count() }} Komentar</span>

@@ -120,17 +120,6 @@
             background: var(--primary-color);
         }
 
-        .admin-link {
-            background: var(--primary-color) !important;
-            color: #fff !important;
-            padding: 3px 10px;
-            border-radius: 3px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         /* Main Header */
         .header {
             background: #fff;
@@ -1260,7 +1249,6 @@
                 <a href="{{ \App\Models\Setting::get('facebook_url', '#') }}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
                 <a href="{{ \App\Models\Setting::get('twitter_url', '#') }}" target="_blank" title="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
                 <a href="{{ \App\Models\Setting::get('telegram_url', '#') }}" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
-                <a href="{{ route('admin.login') }}" class="admin-link" title="Dashboard Admin"><i class="fa-solid fa-lock"></i> Admin</a>
             </div>
         </div>
     </div>
