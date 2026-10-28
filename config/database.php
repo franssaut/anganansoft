@@ -61,10 +61,10 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', (function () {
                     $paths = [
+                        base_path('database/certs/ca-bundle.crt'),
                         '/etc/ssl/certs/ca-certificates.crt',
                         '/etc/pki/tls/certs/ca-bundle.crt',
                         '/etc/ssl/ca-bundle.pem',
-                        'C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt',
                     ];
                     foreach ($paths as $path) {
                         if (file_exists($path)) {
@@ -76,7 +76,7 @@ return [
                 })()),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
                     ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
-                    : null,
+                    : false,
             ], fn ($value) => $value !== null && $value !== '') : [],
         ],
 
@@ -98,10 +98,10 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', (function () {
                     $paths = [
+                        base_path('database/certs/ca-bundle.crt'),
                         '/etc/ssl/certs/ca-certificates.crt',
                         '/etc/pki/tls/certs/ca-bundle.crt',
                         '/etc/ssl/ca-bundle.pem',
-                        'C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt',
                     ];
                     foreach ($paths as $path) {
                         if (file_exists($path)) {
@@ -113,7 +113,7 @@ return [
                 })()),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
                     ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
-                    : null,
+                    : false,
             ], fn ($value) => $value !== null && $value !== '') : [],
         ],
 
