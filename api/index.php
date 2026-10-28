@@ -38,9 +38,17 @@ putenv('LOG_CHANNEL=stderr');
 $_ENV['LOG_CHANNEL'] = 'stderr';
 $_SERVER['LOG_CHANNEL'] = 'stderr';
 
-// 3. Fallback SQLite in /tmp if external database (TiDB / MySQL) is not configured
-$dbConnection = getenv('DB_CONNECTION');
+// 3. Detect Database Connection: TiDB Cloud (MySQL) or SQLite fallback
 $dbHost = getenv('DB_HOST');
+$dbConnection = getenv('DB_CONNECTION');
+
+if ($dbHost && (! $dbConnection || $dbConnection === 'sqlite')) {
+    putenv('DB_CONNECTION=mysql');
+    $_ENV['DB_CONNECTION'] = 'mysql';
+    $_SERVER['DB_CONNECTION'] = 'mysql';
+    $dbConnection = 'mysql';
+}
+
 $useSqlite = ($dbConnection === 'sqlite' || (! $dbConnection && ! $dbHost));
 $sqlitePath = '/tmp/database.sqlite';
 
@@ -70,7 +78,7 @@ $app->useStoragePath('/tmp/storage');
 $kernel = $app->make(Kernel::class);
 $kernel->bootstrap();
 
-// Ensure config points to /tmp/database.sqlite if using SQLite fallback
+// Ensure database connection config is correctly selected
 if ($useSqlite) {
     config([
         'database.default' => 'sqlite',
@@ -78,6 +86,12 @@ if ($useSqlite) {
     ]);
     DB::purge('sqlite');
     DB::reconnect('sqlite');
+} else {
+    config([
+        'database.default' => 'mysql',
+    ]);
+    DB::purge('mysql');
+    DB::reconnect('mysql');
 }
 
 // 6. Ensure database schema and initial seed data exist
