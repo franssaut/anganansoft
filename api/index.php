@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Post;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -83,10 +84,12 @@ if ($useSqlite) {
 try {
     if (! Schema::hasTable('posts') || Post::count() === 0) {
         Artisan::call('migrate', ['--force' => true]);
-        Artisan::call('db:seed', ['--force' => true]);
+        if (Post::count() === 0) {
+            (new DatabaseSeeder)->run();
+        }
     }
 } catch (Throwable $e) {
-    error_log('Database init warning: '.$e->getMessage());
+    error_log('Database init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 }
 
 // 7. Handle incoming HTTP request
