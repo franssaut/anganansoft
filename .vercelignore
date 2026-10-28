@@ -1,0 +1,12 @@
+.git
+.github
+tests
+phpunit.xml
+.editorconfig
+README.md
+AGENTS.md
+CLAUDE.md
+boost.json
+.claude
+.cursor
+*.log
