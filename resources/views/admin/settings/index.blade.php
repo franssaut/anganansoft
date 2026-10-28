@@ -53,16 +53,6 @@
                             <input type="url" id="facebook_url" name="facebook_url" class="form-control" value="{{ old('facebook_url', $settings['facebook_url']) }}">
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label" for="twitter_url"><i class="fa-brands fa-x-twitter"></i> URL Twitter / X</label>
-                            <input type="url" id="twitter_url" name="twitter_url" class="form-control" value="{{ old('twitter_url', $settings['twitter_url']) }}">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="telegram_url"><i class="fa-brands fa-telegram" style="color:#0088cc;"></i> URL Channel Telegram</label>
-                            <input type="url" id="telegram_url" name="telegram_url" class="form-control" value="{{ old('telegram_url', $settings['telegram_url']) }}">
-                        </div>
-
                         <button type="submit" class="btn btn-teal" style="padding:10px 20px;">
                             <i class="fa-solid fa-floppy-disk"></i> Simpan Pengaturan Website
                         </button>

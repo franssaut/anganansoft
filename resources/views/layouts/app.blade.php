@@ -1247,8 +1247,6 @@
             </ul>
             <div class="top-social">
                 <a href="{{ \App\Models\Setting::get('facebook_url', '#') }}" target="_blank" title="Facebook"><i class="fa-brands fa-facebook-f"></i></a>
-                <a href="{{ \App\Models\Setting::get('twitter_url', '#') }}" target="_blank" title="Twitter"><i class="fa-brands fa-x-twitter"></i></a>
-                <a href="{{ \App\Models\Setting::get('telegram_url', '#') }}" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
             </div>
         </div>
     </div>

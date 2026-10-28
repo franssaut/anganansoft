@@ -150,14 +150,8 @@
                 <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(request()->url()) }}" target="_blank" class="share-icon-btn share-fb" style="width:36px; height:36px; font-size:14px;" title="Bagikan ke Facebook">
                     <i class="fa-brands fa-facebook-f"></i>
                 </a>
-                <a href="https://twitter.com/intent/tweet?url={{ urlencode(request()->url()) }}&text={{ urlencode($post->title) }}" target="_blank" class="share-icon-btn share-tw" style="width:36px; height:36px; font-size:14px;" title="Bagikan ke Twitter">
-                    <i class="fa-brands fa-x-twitter"></i>
-                </a>
                 <a href="https://api.whatsapp.com/send?text={{ urlencode($post->title . ' ' . request()->url()) }}" target="_blank" class="share-icon-btn share-wa" style="width:36px; height:36px; font-size:14px;" title="Bagikan ke WhatsApp">
                     <i class="fa-brands fa-whatsapp"></i>
-                </a>
-                <a href="https://t.me/share/url?url={{ urlencode(request()->url()) }}&text={{ urlencode($post->title) }}" target="_blank" class="share-icon-btn" style="width:36px; height:36px; font-size:14px; background:#0088cc;" title="Bagikan ke Telegram">
-                    <i class="fa-brands fa-telegram"></i>
                 </a>
             </div>
         </div>

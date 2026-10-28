@@ -37,7 +37,6 @@
                     <h3 style="font-size:16px; margin-bottom:12px; color:#1e293b;"><i class="fa-solid fa-envelope" style="color:var(--primary-color);"></i> Kontak Resmi AngananSoft</h3>
                     <ul style="list-style:none; margin-left:0; line-height:2.2;">
                         <li><strong>Email:</strong> <a href="mailto:{{ \App\Models\Setting::get('contact_email', 'contact@anganansoft.com') }}">{{ \App\Models\Setting::get('contact_email', 'contact@anganansoft.com') }}</a></li>
-                        <li><strong>Telegram:</strong> <a href="{{ \App\Models\Setting::get('telegram_url', '#') }}" target="_blank">Channel Resmi AngananSoft</a></li>
                         <li><strong>Facebook:</strong> <a href="{{ \App\Models\Setting::get('facebook_url', '#') }}" target="_blank">AngananSoft Fanpage</a></li>
                     </ul>
                 </div>

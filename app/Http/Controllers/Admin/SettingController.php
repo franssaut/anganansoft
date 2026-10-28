@@ -26,8 +26,6 @@ class SettingController extends Controller
             'archive_password' => Setting::get('archive_password', 'anganansoft'),
             'contact_email' => Setting::get('contact_email', 'contact@anganansoft.com'),
             'facebook_url' => Setting::get('facebook_url', 'https://facebook.com/anganansoft'),
-            'twitter_url' => Setting::get('twitter_url', 'https://twitter.com/anganansoft'),
-            'telegram_url' => Setting::get('telegram_url', 'https://t.me/anganansoft'),
             'footer_about' => Setting::get('footer_about', 'AngananSoft adalah blog penyedia software multimedia, games, tools windows gratis.'),
         ];
 
@@ -47,8 +45,6 @@ class SettingController extends Controller
             'archive_password' => 'nullable|string|max:100',
             'contact_email' => 'nullable|email|max:150',
             'facebook_url' => 'nullable|url:http,https|max:255',
-            'twitter_url' => 'nullable|url:http,https|max:255',
-            'telegram_url' => 'nullable|url:http,https|max:255',
             'footer_about' => 'nullable|string|max:1000',
         ]);
 

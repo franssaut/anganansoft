@@ -43,8 +43,6 @@ class DatabaseSeeder extends Seeder
             'site_keywords' => 'Download Software PC Komputer, Game, android, IPhone Full Version, Crack, Patch, Serial Number',
             'contact_email' => 'contact@anganansoft.com',
             'facebook_url' => 'https://facebook.com/anganansoft',
-            'twitter_url' => 'https://twitter.com/anganansoft',
-            'telegram_url' => 'https://t.me/anganansoft',
             'archive_password' => 'anganansoft',
             'footer_about' => 'AngananSoft adalah blog penyedia download gratis software multimedia, tools utilities, PC games, sistem operasi Windows, dan tutorial seputar komputer terlengkap dengan lisensi full version.',
         ];

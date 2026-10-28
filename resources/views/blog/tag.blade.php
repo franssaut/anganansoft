@@ -44,7 +44,6 @@
 
                     <div class="social-share-mini">
                         <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('blog.show', $post->slug)) }}" target="_blank" class="share-icon-btn share-fb"><i class="fa-brands fa-facebook-f"></i></a>
-                        <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('blog.show', $post->slug)) }}&text={{ urlencode($post->title) }}" target="_blank" class="share-icon-btn share-tw"><i class="fa-brands fa-x-twitter"></i></a>
                         <a href="https://api.whatsapp.com/send?text={{ urlencode($post->title . ' ' . route('blog.show', $post->slug)) }}" target="_blank" class="share-icon-btn share-wa"><i class="fa-brands fa-whatsapp"></i></a>
                     </div>
                 </div>

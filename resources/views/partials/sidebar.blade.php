@@ -21,12 +21,6 @@
             <a href="{{ \App\Models\Setting::get('facebook_url', '#') }}" target="_blank" style="flex:1; background:#3b5998; color:#fff; padding:10px; border-radius:4px; text-align:center; font-weight:700; font-size:12.5px;">
                 <i class="fa-brands fa-facebook-f"></i> Facebook
             </a>
-            <a href="{{ \App\Models\Setting::get('twitter_url', '#') }}" target="_blank" style="flex:1; background:#1da1f2; color:#fff; padding:10px; border-radius:4px; text-align:center; font-weight:700; font-size:12.5px;">
-                <i class="fa-brands fa-x-twitter"></i> Twitter
-            </a>
-            <a href="{{ \App\Models\Setting::get('telegram_url', '#') }}" target="_blank" style="flex:1; background:#0088cc; color:#fff; padding:10px; border-radius:4px; text-align:center; font-weight:700; font-size:12.5px;">
-                <i class="fa-brands fa-telegram"></i> Telegram
-            </a>
         </div>
     </div>
 </div>
