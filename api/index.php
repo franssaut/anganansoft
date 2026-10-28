@@ -41,12 +41,21 @@ $_SERVER['LOG_CHANNEL'] = 'stderr';
 // 3. Detect Database Connection: TiDB Cloud (MySQL) or SQLite fallback
 $dbHost = getenv('DB_HOST');
 $dbConnection = getenv('DB_CONNECTION');
+$dbDatabase = getenv('DB_DATABASE');
 
 if ($dbHost && (! $dbConnection || $dbConnection === 'sqlite')) {
     putenv('DB_CONNECTION=mysql');
     $_ENV['DB_CONNECTION'] = 'mysql';
     $_SERVER['DB_CONNECTION'] = 'mysql';
     $dbConnection = 'mysql';
+}
+
+// In TiDB / MySQL, 'sys' is an internal system performance schema where table creation is forbidden.
+// If DB_DATABASE is 'sys' or empty on MySQL, redirect to the default user database 'test'.
+if ($dbConnection === 'mysql' && (! $dbDatabase || $dbDatabase === 'sys')) {
+    putenv('DB_DATABASE=test');
+    $_ENV['DB_DATABASE'] = 'test';
+    $_SERVER['DB_DATABASE'] = 'test';
 }
 
 $useSqlite = ($dbConnection === 'sqlite' || (! $dbConnection && ! $dbHost));
@@ -87,6 +96,10 @@ if ($useSqlite) {
     DB::purge('sqlite');
     DB::reconnect('sqlite');
 } else {
+    $dbName = config('database.connections.mysql.database');
+    if (! $dbName || $dbName === 'sys') {
+        config(['database.connections.mysql.database' => 'test']);
+    }
     config([
         'database.default' => 'mysql',
     ]);
@@ -113,6 +126,28 @@ if (isset($_GET['check_db'])) {
         $dbs = DB::select('SHOW DATABASES');
         echo "AVAILABLE DATABASES:\n";
         print_r($dbs);
+
+        try {
+            DB::statement('CREATE DATABASE IF NOT EXISTS anganansoft');
+            echo "DATABASE anganansoft created or exists successfully!\n";
+        } catch (Throwable $e) {
+            echo 'CREATE DATABASE ERROR: '.$e->getMessage()."\n";
+        }
+
+        try {
+            echo "Running migrate...\n";
+            Artisan::call('migrate', ['--force' => true]);
+            echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
+            echo 'POSTS COUNT: '.Post::count()."\n";
+            if (Post::count() === 0) {
+                echo "Running seed...\n";
+                (new DatabaseSeeder)->run();
+                echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
+            }
+        } catch (Throwable $e) {
+            echo 'MIGRATE/SEED FAILED: '.$e->getMessage()."\n";
+            echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
+        }
     } catch (Throwable $e) {
         echo "CONNECTION FAILED:\n";
         echo $e->getMessage()."\n";
