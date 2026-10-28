@@ -146,19 +146,38 @@ if (isset($_GET['check_db'])) {
             echo 'CREATE DATABASE ERROR: '.$e->getMessage()."\n";
         }
 
+        $tables = DB::select('SHOW TABLES');
+        echo "TABLES IN anganansoft:\n";
+        print_r($tables);
+
         try {
-            echo "Running migrate...\n";
-            Artisan::call('migrate', ['--force' => true]);
-            echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
-            echo 'POSTS COUNT: '.Post::count()."\n";
-            if (Post::count() === 0) {
-                echo "Running seed...\n";
-                (new DatabaseSeeder)->run();
-                echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
-            }
+            $migs = DB::table('migrations')->get();
+            echo "MIGRATIONS RECORDED:\n";
+            print_r($migs);
         } catch (Throwable $e) {
-            echo 'MIGRATE/SEED FAILED: '.$e->getMessage()."\n";
-            echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
+            echo 'MIGRATIONS TABLE ERROR: '.$e->getMessage()."\n";
+        }
+
+        if (isset($_GET['fresh'])) {
+            echo "Running migrate:fresh --seed...\n";
+            Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
+            echo "FRESH OUTPUT:\n".Artisan::output()."\n";
+        } else {
+            try {
+                echo "Running migrate...\n";
+                Artisan::call('migrate', ['--force' => true]);
+                echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
+            } catch (Throwable $e) {
+                echo 'MIGRATE FAILED: '.$e->getMessage()."\n";
+                echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
+            }
+        }
+
+        echo 'POSTS COUNT: '.Post::count()."\n";
+        if (Post::count() === 0) {
+            echo "Running seed...\n";
+            (new DatabaseSeeder)->run();
+            echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
         }
     } catch (Throwable $e) {
         echo "CONNECTION FAILED:\n";
