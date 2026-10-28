@@ -137,14 +137,185 @@ if (isset($_GET['check_db'])) {
         echo "CONNECTED TO PDO SUCCESSFULLY!\n";
 
         $step = $_GET['step'] ?? null;
-        if ($step === 'fresh') {
-            echo "Running migrate:fresh...\n";
-            Artisan::call('migrate:fresh', ['--force' => true]);
-            echo "FRESH OUTPUT:\n".Artisan::output()."\n";
-        } elseif ($step === 'migrate') {
-            echo "Running migrate...\n";
-            Artisan::call('migrate', ['--force' => true]);
-            echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
+        if ($step === 'init' || $step === 'fresh') {
+            echo "Initializing tables with CREATE TABLE IF NOT EXISTS...\n";
+            DB::statement('CREATE TABLE IF NOT EXISTS users (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(255) NOT NULL UNIQUE,
+                email_verified_at TIMESTAMP NULL,
+                password VARCHAR(255) NOT NULL,
+                remember_token VARCHAR(100) NULL,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                email VARCHAR(255) PRIMARY KEY,
+                token VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS sessions (
+                id VARCHAR(255) PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                ip_address VARCHAR(45) NULL,
+                user_agent TEXT NULL,
+                payload LONGTEXT NOT NULL,
+                last_activity INT NOT NULL,
+                INDEX sessions_user_id_index (user_id),
+                INDEX sessions_last_activity_index (last_activity)
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS cache (
+                `key` VARCHAR(255) PRIMARY KEY,
+                `value` MEDIUMTEXT NOT NULL,
+                expiration BIGINT NOT NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS cache_locks (
+                `key` VARCHAR(255) PRIMARY KEY,
+                owner VARCHAR(255) NOT NULL,
+                expiration BIGINT NOT NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS jobs (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                queue VARCHAR(255) NOT NULL,
+                payload LONGTEXT NOT NULL,
+                attempts TINYINT UNSIGNED NOT NULL,
+                reserved_at INT UNSIGNED NULL,
+                available_at INT UNSIGNED NOT NULL,
+                created_at INT UNSIGNED NOT NULL,
+                INDEX jobs_queue_index (queue)
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS job_batches (
+                id VARCHAR(255) PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                total_jobs INT NOT NULL,
+                pending_jobs INT NOT NULL,
+                failed_jobs INT NOT NULL,
+                failed_job_ids LONGTEXT NOT NULL,
+                options MEDIUMTEXT NULL,
+                cancelled_at INT NULL,
+                created_at INT NOT NULL,
+                finished_at INT NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS failed_jobs (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                uuid VARCHAR(255) NOT NULL UNIQUE,
+                connection TEXT NOT NULL,
+                queue TEXT NOT NULL,
+                payload LONGTEXT NOT NULL,
+                exception LONGTEXT NOT NULL,
+                failed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS categories (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                slug VARCHAR(255) NOT NULL UNIQUE,
+                color VARCHAR(255) NOT NULL DEFAULT "#e91e63",
+                description TEXT NULL,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS posts (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                user_id BIGINT UNSIGNED NULL,
+                category_id BIGINT UNSIGNED NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                slug VARCHAR(255) NOT NULL UNIQUE,
+                excerpt TEXT NULL,
+                content LONGTEXT NOT NULL,
+                featured_image LONGTEXT NULL,
+                software_version VARCHAR(255) NULL,
+                file_size VARCHAR(255) NULL,
+                license_type VARCHAR(255) NULL DEFAULT "Full Version",
+                os_support VARCHAR(255) NULL DEFAULT "Windows 11 / 10 / 8 / 7",
+                password_archive VARCHAR(255) NULL DEFAULT "anganansoft",
+                download_links JSON NULL,
+                system_requirements TEXT NULL,
+                installation_guide TEXT NULL,
+                views BIGINT UNSIGNED NOT NULL DEFAULT 0,
+                is_featured TINYINT(1) NOT NULL DEFAULT 0,
+                status VARCHAR(255) NOT NULL DEFAULT "published",
+                published_at TIMESTAMP NULL,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS tags (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                slug VARCHAR(255) NOT NULL UNIQUE,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS comments (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT UNSIGNED NOT NULL,
+                author_name VARCHAR(255) NOT NULL,
+                author_email VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                is_approved TINYINT(1) NOT NULL DEFAULT 1,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS settings (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `key` VARCHAR(255) NOT NULL UNIQUE,
+                `value` LONGTEXT NULL,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS post_tag (
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                post_id BIGINT UNSIGNED NOT NULL,
+                tag_id BIGINT UNSIGNED NOT NULL,
+                created_at TIMESTAMP NULL,
+                updated_at TIMESTAMP NULL,
+                UNIQUE KEY post_tag_unique (post_id, tag_id)
+            )');
+
+            DB::statement('CREATE TABLE IF NOT EXISTS migrations (
+                id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                migration VARCHAR(255) NOT NULL,
+                batch INT NOT NULL
+            )');
+
+            $allMigrations = [
+                '0001_01_01_000000_create_users_table',
+                '0001_01_01_000001_create_cache_table',
+                '0001_01_01_000002_create_jobs_table',
+                '2026_10_27_153651_create_categories_table',
+                '2026_10_27_153653_create_posts_table',
+                '2026_10_27_153654_create_tags_table',
+                '2026_10_27_153656_create_comments_table',
+                '2026_10_27_153657_create_settings_table',
+                '2026_10_27_153707_create_post_tag_table',
+                '2026_10_28_084749_change_featured_image_to_longtext_in_posts_table',
+            ];
+
+            foreach ($allMigrations as $m) {
+                if (! DB::table('migrations')->where('migration', $m)->exists()) {
+                    DB::table('migrations')->insert(['migration' => $m, 'batch' => 1]);
+                }
+            }
+
+            echo "TABLES INITIALIZED SUCCESSFULLY!\n";
+
+            if (Post::count() === 0) {
+                echo "Running DatabaseSeeder...\n";
+                (new DatabaseSeeder)->run();
+                echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
+            }
         } elseif ($step === 'seed') {
             echo "Running DatabaseSeeder...\n";
             (new DatabaseSeeder)->run();
