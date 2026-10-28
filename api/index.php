@@ -136,6 +136,11 @@ if (isset($_GET['check_db'])) {
         DB::connection()->getPdo();
         echo "CONNECTED TO PDO SUCCESSFULLY!\n";
 
+        try {
+            DB::statement('ALTER TABLE comments ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT "approved"');
+        } catch (Throwable $ignored) {
+        }
+
         $step = $_GET['step'] ?? null;
         if ($step === 'init' || $step === 'fresh') {
             echo "Initializing tables with CREATE TABLE IF NOT EXISTS...\n";
