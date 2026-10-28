@@ -50,12 +50,11 @@ if ($dbHost && (! $dbConnection || $dbConnection === 'sqlite')) {
     $dbConnection = 'mysql';
 }
 
-// In TiDB / MySQL, 'sys' is an internal system performance schema where table creation is forbidden.
-// If DB_DATABASE is 'sys' or empty on MySQL, redirect to the default user database 'test'.
-if ($dbConnection === 'mysql' && (! $dbDatabase || $dbDatabase === 'sys')) {
-    putenv('DB_DATABASE=test');
-    $_ENV['DB_DATABASE'] = 'test';
-    $_SERVER['DB_DATABASE'] = 'test';
+// In TiDB / MySQL, redirect sys or test to our dedicated clean database 'anganansoft'.
+if ($dbConnection === 'mysql' && (! $dbDatabase || $dbDatabase === 'sys' || $dbDatabase === 'test')) {
+    putenv('DB_DATABASE=anganansoft');
+    $_ENV['DB_DATABASE'] = 'anganansoft';
+    $_SERVER['DB_DATABASE'] = 'anganansoft';
 }
 
 $useSqlite = ($dbConnection === 'sqlite' || (! $dbConnection && ! $dbHost));
@@ -97,14 +96,27 @@ if ($useSqlite) {
     DB::reconnect('sqlite');
 } else {
     $dbName = config('database.connections.mysql.database');
-    if (! $dbName || $dbName === 'sys') {
-        config(['database.connections.mysql.database' => 'test']);
+    if (! $dbName || $dbName === 'sys' || $dbName === 'test') {
+        config(['database.connections.mysql.database' => 'anganansoft']);
     }
     config([
         'database.default' => 'mysql',
     ]);
     DB::purge('mysql');
     DB::reconnect('mysql');
+
+    try {
+        DB::connection()->getPdo();
+    } catch (Throwable $e) {
+        if (str_contains($e->getMessage(), 'Unknown database')) {
+            config(['database.connections.mysql.database' => null]);
+            DB::purge('mysql');
+            DB::statement('CREATE DATABASE IF NOT EXISTS anganansoft');
+            config(['database.connections.mysql.database' => 'anganansoft']);
+            DB::purge('mysql');
+            DB::reconnect('mysql');
+        }
+    }
 }
 
 // 6. Diagnostic endpoint for TiDB Cloud connection

@@ -51,7 +51,7 @@ return [
             'database' => (function () {
                 $db = env('DB_DATABASE', 'laravel');
 
-                return ($db === 'sys' || empty($db)) ? 'test' : $db;
+                return ($db === 'sys' || $db === 'test' || empty($db)) ? 'anganansoft' : $db;
             })(),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
