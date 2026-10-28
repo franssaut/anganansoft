@@ -1,6 +1,11 @@
 <?php
 
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
+
+define('LARAVEL_START', microtime(true));
 
 // 1. Prepare writable directory tree in /tmp for Vercel serverless functions
 $tmpDirs = [
@@ -25,29 +30,42 @@ putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 3. Setup SQLite in /tmp if external database is not specified
-$needsInit = false;
+// 3. Setup SQLite fallback in /tmp if external database (TiDB / MySQL) is not specified
 $dbConnection = getenv('DB_CONNECTION');
-if ($dbConnection === 'sqlite' || (! $dbConnection && ! getenv('DB_HOST'))) {
+$dbHost = getenv('DB_HOST');
+
+if ($dbConnection === 'sqlite' || (! $dbConnection && ! $dbHost)) {
     $dbPath = '/tmp/database.sqlite';
     if (! file_exists($dbPath) || filesize($dbPath) === 0) {
         @touch($dbPath);
-        $needsInit = true;
     }
+    putenv('DB_CONNECTION=sqlite');
     putenv('DB_DATABASE='.$dbPath);
+    $_ENV['DB_CONNECTION'] = 'sqlite';
     $_ENV['DB_DATABASE'] = $dbPath;
+    $_SERVER['DB_CONNECTION'] = 'sqlite';
     $_SERVER['DB_DATABASE'] = $dbPath;
 }
 
-// 4. Bootstrap Laravel
-require __DIR__.'/../public/index.php';
+// 4. Register Composer autoloader
+require __DIR__.'/../vendor/autoload.php';
 
-// 5. Auto-migrate and seed initial database on first boot if newly created in /tmp
-if ($needsInit && class_exists(Artisan::class)) {
+// 5. Bootstrap Laravel
+/** @var Application $app */
+$app = require_once __DIR__.'/../bootstrap/app.php';
+
+// 6. Automatically initialize database (migrate & seed) on first run if tables are missing
+if (! file_exists('/tmp/.db_initialized')) {
     try {
-        Artisan::call('migrate', ['--force' => true]);
-        Artisan::call('db:seed', ['--force' => true]);
+        if (! Schema::hasTable('posts')) {
+            Artisan::call('migrate', ['--force' => true]);
+            Artisan::call('db:seed', ['--force' => true]);
+        }
+        @touch('/tmp/.db_initialized');
     } catch (Throwable $e) {
-        // Log silently
+        // If DB is temporarily unreachable during warmup, continue so Laravel handles request or error gracefully
     }
 }
+
+// 7. Handle incoming HTTP request
+$app->handleRequest(Request::capture());

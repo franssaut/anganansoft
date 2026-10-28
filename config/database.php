@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Str;
-use Pdo\Mysql;
 
 return [
 
@@ -60,8 +59,25 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', (function () {
+                    $paths = [
+                        '/etc/ssl/certs/ca-certificates.crt',
+                        '/etc/pki/tls/certs/ca-bundle.crt',
+                        '/etc/ssl/ca-bundle.pem',
+                        'C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt',
+                    ];
+                    foreach ($paths as $path) {
+                        if (file_exists($path)) {
+                            return $path;
+                        }
+                    }
+
+                    return null;
+                })()),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
+                    ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
+                    : null,
+            ], fn ($value) => $value !== null && $value !== '') : [],
         ],
 
         'mariadb' => [
@@ -80,8 +96,25 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-            ]) : [],
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA', (function () {
+                    $paths = [
+                        '/etc/ssl/certs/ca-certificates.crt',
+                        '/etc/pki/tls/certs/ca-bundle.crt',
+                        '/etc/ssl/ca-bundle.pem',
+                        'C:\\Program Files\\Git\\mingw64\\etc\\ssl\\certs\\ca-bundle.crt',
+                    ];
+                    foreach ($paths as $path) {
+                        if (file_exists($path)) {
+                            return $path;
+                        }
+                    }
+
+                    return null;
+                })()),
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT') !== null
+                    ? filter_var(env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'), FILTER_VALIDATE_BOOLEAN)
+                    : null,
+            ], fn ($value) => $value !== null && $value !== '') : [],
         ],
 
         'pgsql' => [
