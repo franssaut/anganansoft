@@ -316,11 +316,16 @@ if (isset($_GET['check_db'])) {
 
             echo "TABLES INITIALIZED SUCCESSFULLY!\n";
 
-            if (Post::count() === 0) {
-                echo "Running DatabaseSeeder...\n";
-                (new DatabaseSeeder)->run();
-                echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
-            }
+        } elseif ($step === 'seed_meta') {
+            echo "Seeding Admin, Settings, Categories, Tags...\n";
+            (new DatabaseSeeder)->seedMeta();
+            echo "META SEEDING COMPLETED!\n";
+        } elseif ($step === 'seed_posts') {
+            $offset = (int) ($_GET['offset'] ?? 0);
+            $limit = (int) ($_GET['limit'] ?? 4);
+            echo "Seeding posts from offset {$offset} (limit {$limit})...\n";
+            (new DatabaseSeeder)->seedPosts($offset, $limit);
+            echo 'POSTS SEEDING COMPLETED! POSTS COUNT: '.Post::count()."\n";
         } elseif ($step === 'seed') {
             echo "Running DatabaseSeeder...\n";
             (new DatabaseSeeder)->run();
