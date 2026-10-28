@@ -39,22 +39,22 @@ $_ENV['LOG_CHANNEL'] = 'stderr';
 $_SERVER['LOG_CHANNEL'] = 'stderr';
 
 // 3. Detect Database Connection: TiDB Cloud (MySQL) or SQLite fallback
-$dbHost = getenv('DB_HOST');
-$dbConnection = getenv('DB_CONNECTION');
-$dbDatabase = getenv('DB_DATABASE');
+$dbHost = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? ($_SERVER['DB_HOST'] ?? null));
+$dbConnection = getenv('DB_CONNECTION') ?: ($_ENV['DB_CONNECTION'] ?? ($_SERVER['DB_CONNECTION'] ?? null));
+$dbDatabase = getenv('DB_DATABASE') ?: ($_ENV['DB_DATABASE'] ?? ($_SERVER['DB_DATABASE'] ?? null));
 
-if ($dbHost && (! $dbConnection || $dbConnection === 'sqlite')) {
+if ($dbHost) {
     putenv('DB_CONNECTION=mysql');
     $_ENV['DB_CONNECTION'] = 'mysql';
     $_SERVER['DB_CONNECTION'] = 'mysql';
     $dbConnection = 'mysql';
-}
 
-// In TiDB / MySQL, redirect sys or test to our dedicated clean database 'anganansoft'.
-if ($dbConnection === 'mysql' && (! $dbDatabase || $dbDatabase === 'sys' || $dbDatabase === 'test')) {
-    putenv('DB_DATABASE=anganansoft');
-    $_ENV['DB_DATABASE'] = 'anganansoft';
-    $_SERVER['DB_DATABASE'] = 'anganansoft';
+    if (! $dbDatabase || in_array($dbDatabase, ['sys', 'test', 'laravel'])) {
+        putenv('DB_DATABASE=anganansoft');
+        $_ENV['DB_DATABASE'] = 'anganansoft';
+        $_SERVER['DB_DATABASE'] = 'anganansoft';
+        $dbDatabase = 'anganansoft';
+    }
 }
 
 $useSqlite = ($dbConnection === 'sqlite' || (! $dbConnection && ! $dbHost));
@@ -135,52 +135,29 @@ if (isset($_GET['check_db'])) {
 
         DB::connection()->getPdo();
         echo "CONNECTED TO PDO SUCCESSFULLY!\n";
-        $dbs = DB::select('SHOW DATABASES');
-        echo "AVAILABLE DATABASES:\n";
-        print_r($dbs);
 
-        try {
-            DB::statement('CREATE DATABASE IF NOT EXISTS anganansoft');
-            echo "DATABASE anganansoft created or exists successfully!\n";
-        } catch (Throwable $e) {
-            echo 'CREATE DATABASE ERROR: '.$e->getMessage()."\n";
+        $step = $_GET['step'] ?? null;
+        if ($step === 'fresh') {
+            echo "Running migrate:fresh...\n";
+            Artisan::call('migrate:fresh', ['--force' => true]);
+            echo "FRESH OUTPUT:\n".Artisan::output()."\n";
+        } elseif ($step === 'seed') {
+            echo "Running DatabaseSeeder...\n";
+            (new DatabaseSeeder)->run();
+            echo 'SEED COMPLETED! POSTS COUNT: '.Post::count()."\n";
         }
 
         $tables = DB::select('SHOW TABLES');
-        echo "TABLES IN anganansoft:\n";
+        echo 'TABLES IN '.config('database.connections.mysql.database').":\n";
         print_r($tables);
 
-        try {
-            $migs = DB::table('migrations')->get();
-            echo "MIGRATIONS RECORDED:\n";
-            print_r($migs);
-        } catch (Throwable $e) {
-            echo 'MIGRATIONS TABLE ERROR: '.$e->getMessage()."\n";
-        }
-
-        if (isset($_GET['fresh'])) {
-            echo "Running migrate:fresh --seed...\n";
-            Artisan::call('migrate:fresh', ['--force' => true, '--seed' => true]);
-            echo "FRESH OUTPUT:\n".Artisan::output()."\n";
+        if (Schema::hasTable('posts')) {
+            echo 'POSTS COUNT: '.Post::count()."\n";
         } else {
-            try {
-                echo "Running migrate...\n";
-                Artisan::call('migrate', ['--force' => true]);
-                echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
-            } catch (Throwable $e) {
-                echo 'MIGRATE FAILED: '.$e->getMessage()."\n";
-                echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
-            }
-        }
-
-        echo 'POSTS COUNT: '.Post::count()."\n";
-        if (Post::count() === 0) {
-            echo "Running seed...\n";
-            (new DatabaseSeeder)->run();
-            echo 'SEEDED! POSTS COUNT: '.Post::count()."\n";
+            echo "posts table not yet created.\n";
         }
     } catch (Throwable $e) {
-        echo "CONNECTION FAILED:\n";
+        echo "CONNECTION/OPERATION FAILED:\n";
         echo $e->getMessage()."\n";
         echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
     }
@@ -188,15 +165,28 @@ if (isset($_GET['check_db'])) {
 }
 
 // 7. Ensure database schema and initial seed data exist
-try {
-    if (! Schema::hasTable('posts') || Post::count() === 0) {
-        Artisan::call('migrate', ['--force' => true]);
-        if (Post::count() === 0) {
+if ($useSqlite) {
+    try {
+        if (! Schema::hasTable('posts') || Post::count() === 0) {
+            Artisan::call('migrate', ['--force' => true]);
+            if (Post::count() === 0) {
+                (new DatabaseSeeder)->run();
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('SQLite init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
+    }
+} else {
+    try {
+        if (! Schema::hasTable('posts') || ! Schema::hasTable('settings')) {
+            Artisan::call('migrate:fresh', ['--force' => true]);
+        }
+        if (Schema::hasTable('posts') && Post::count() === 0) {
             (new DatabaseSeeder)->run();
         }
+    } catch (Throwable $e) {
+        error_log('TiDB init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
     }
-} catch (Throwable $e) {
-    error_log('Database init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 }
 
 // 8. Handle incoming HTTP request

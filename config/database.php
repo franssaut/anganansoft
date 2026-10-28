@@ -16,7 +16,13 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', env('DB_HOST') ? 'mysql' : 'sqlite'),
+    'default' => (function () {
+        if (env('DB_HOST')) {
+            return 'mysql';
+        }
+
+        return env('DB_CONNECTION', 'sqlite');
+    })(),
 
     /*
     |--------------------------------------------------------------------------
@@ -34,7 +40,14 @@ return [
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
-            'database' => env('DB_DATABASE', database_path('database.sqlite')),
+            'database' => (function () {
+                $db = env('DB_DATABASE');
+                if (! $db || in_array($db, ['sys', 'test', 'anganansoft', 'laravel']) || ! str_contains($db, '.')) {
+                    return (PHP_SAPI !== 'cli' && is_dir('/tmp')) ? '/tmp/database.sqlite' : database_path('database.sqlite');
+                }
+
+                return $db;
+            })(),
             'prefix' => '',
             'foreign_key_constraints' => env('DB_FOREIGN_KEYS', true),
             'busy_timeout' => null,
