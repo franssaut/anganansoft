@@ -119,8 +119,8 @@ if ($useSqlite) {
     }
 }
 
-// 6. Diagnostic endpoint for TiDB Cloud connection
-if (isset($_GET['check_db'])) {
+// 6. Protected diagnostic endpoint for TiDB Cloud
+if (isset($_GET['check_db']) && isset($_GET['key']) && $_GET['key'] === env('APP_KEY')) {
     header('Content-Type: text/plain');
     try {
         echo "Testing DB connection...\n";
