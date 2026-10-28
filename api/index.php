@@ -94,7 +94,34 @@ if ($useSqlite) {
     DB::reconnect('mysql');
 }
 
-// 6. Ensure database schema and initial seed data exist
+// 6. Diagnostic endpoint for TiDB Cloud connection
+if (isset($_GET['check_db'])) {
+    header('Content-Type: text/plain');
+    try {
+        echo "Testing DB connection...\n";
+        echo 'DB_CONNECTION: '.config('database.default')."\n";
+        echo 'DB_HOST: '.config('database.connections.mysql.host')."\n";
+        echo 'DB_PORT: '.config('database.connections.mysql.port')."\n";
+        echo 'DB_DATABASE: '.config('database.connections.mysql.database')."\n";
+        echo 'DB_USERNAME: '.config('database.connections.mysql.username')."\n";
+        $caPath = config('database.connections.mysql.options')[PDO::MYSQL_ATTR_SSL_CA] ?? 'none';
+        echo 'SSL_CA: '.$caPath."\n";
+        echo 'SSL_CA file exists: '.(file_exists($caPath) ? 'YES' : 'NO')."\n";
+
+        DB::connection()->getPdo();
+        echo "CONNECTED TO PDO SUCCESSFULLY!\n";
+        $dbs = DB::select('SHOW DATABASES');
+        echo "AVAILABLE DATABASES:\n";
+        print_r($dbs);
+    } catch (Throwable $e) {
+        echo "CONNECTION FAILED:\n";
+        echo $e->getMessage()."\n";
+        echo 'File: '.$e->getFile().':'.$e->getLine()."\n";
+    }
+    exit;
+}
+
+// 7. Ensure database schema and initial seed data exist
 try {
     if (! Schema::hasTable('posts') || Post::count() === 0) {
         Artisan::call('migrate', ['--force' => true]);
@@ -106,5 +133,5 @@ try {
     error_log('Database init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
 }
 
-// 7. Handle incoming HTTP request
+// 8. Handle incoming HTTP request
 $app->handleRequest(Request::capture());
