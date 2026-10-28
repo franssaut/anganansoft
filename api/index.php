@@ -79,17 +79,14 @@ if ($useSqlite) {
     DB::reconnect('sqlite');
 }
 
-// 6. Automatically initialize database (migrate & seed) on first run if tables missing or empty
-if (! file_exists('/tmp/.db_initialized')) {
-    try {
+// 6. Ensure database schema and initial seed data exist
+try {
+    if (! Schema::hasTable('posts') || Post::count() === 0) {
         Artisan::call('migrate', ['--force' => true]);
-        if (! Schema::hasTable('posts') || Post::count() === 0) {
-            Artisan::call('db:seed', ['--force' => true]);
-        }
-        @touch('/tmp/.db_initialized');
-    } catch (Throwable $e) {
-        error_log('Database init warning: '.$e->getMessage());
+        Artisan::call('db:seed', ['--force' => true]);
     }
+} catch (Throwable $e) {
+    error_log('Database init warning: '.$e->getMessage());
 }
 
 // 7. Handle incoming HTTP request
