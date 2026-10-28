@@ -141,6 +141,10 @@ if (isset($_GET['check_db'])) {
             echo "Running migrate:fresh...\n";
             Artisan::call('migrate:fresh', ['--force' => true]);
             echo "FRESH OUTPUT:\n".Artisan::output()."\n";
+        } elseif ($step === 'migrate') {
+            echo "Running migrate...\n";
+            Artisan::call('migrate', ['--force' => true]);
+            echo "MIGRATE OUTPUT:\n".Artisan::output()."\n";
         } elseif ($step === 'seed') {
             echo "Running DatabaseSeeder...\n";
             (new DatabaseSeeder)->run();
@@ -164,7 +168,7 @@ if (isset($_GET['check_db'])) {
     exit;
 }
 
-// 7. Ensure database schema and initial seed data exist
+// 7. Ensure database schema and initial seed data exist for ephemeral SQLite
 if ($useSqlite) {
     try {
         if (! Schema::hasTable('posts') || Post::count() === 0) {
@@ -175,17 +179,6 @@ if ($useSqlite) {
         }
     } catch (Throwable $e) {
         error_log('SQLite init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
-    }
-} else {
-    try {
-        if (! Schema::hasTable('posts') || ! Schema::hasTable('settings')) {
-            Artisan::call('migrate:fresh', ['--force' => true]);
-        }
-        if (Schema::hasTable('posts') && Post::count() === 0) {
-            (new DatabaseSeeder)->run();
-        }
-    } catch (Throwable $e) {
-        error_log('TiDB init error: '.$e->getMessage().' in '.$e->getFile().':'.$e->getLine());
     }
 }
 
