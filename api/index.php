@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Post;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
@@ -78,11 +79,11 @@ if ($useSqlite) {
     DB::reconnect('sqlite');
 }
 
-// 6. Automatically initialize database (migrate & seed) on first run if tables missing
+// 6. Automatically initialize database (migrate & seed) on first run if tables missing or empty
 if (! file_exists('/tmp/.db_initialized')) {
     try {
-        if (! Schema::hasTable('posts')) {
-            Artisan::call('migrate', ['--force' => true]);
+        Artisan::call('migrate', ['--force' => true]);
+        if (! Schema::hasTable('posts') || Post::count() === 0) {
             Artisan::call('db:seed', ['--force' => true]);
         }
         @touch('/tmp/.db_initialized');
