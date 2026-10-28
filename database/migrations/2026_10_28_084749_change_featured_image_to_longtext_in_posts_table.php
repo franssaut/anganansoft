@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,9 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->longText('featured_image')->nullable()->change();
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('posts', function (Blueprint $table) {
+                $table->longText('featured_image')->nullable()->change();
+            });
+        }
     }
 
     /**
@@ -21,8 +24,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
-            $table->string('featured_image', 500)->nullable()->change();
-        });
+        if (DB::getDriverName() !== 'sqlite') {
+            Schema::table('posts', function (Blueprint $table) {
+                $table->string('featured_image', 500)->nullable()->change();
+            });
+        }
     }
 };
