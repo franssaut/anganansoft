@@ -260,12 +260,17 @@ if (isset($_GET['check_db'])) {
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 post_id BIGINT UNSIGNED NOT NULL,
                 author_name VARCHAR(255) NOT NULL,
-                author_email VARCHAR(255) NOT NULL,
+                author_email VARCHAR(255) NULL,
                 content TEXT NOT NULL,
-                is_approved TINYINT(1) NOT NULL DEFAULT 1,
+                status VARCHAR(255) NOT NULL DEFAULT "approved",
                 created_at TIMESTAMP NULL,
                 updated_at TIMESTAMP NULL
             )');
+
+            try {
+                DB::statement('ALTER TABLE comments ADD COLUMN IF NOT EXISTS status VARCHAR(255) NOT NULL DEFAULT "approved"');
+            } catch (Throwable $ignored) {
+            }
 
             DB::statement('CREATE TABLE IF NOT EXISTS settings (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
