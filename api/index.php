@@ -102,21 +102,6 @@ if ($useSqlite) {
     config([
         'database.default' => 'mysql',
     ]);
-    DB::purge('mysql');
-    DB::reconnect('mysql');
-
-    try {
-        DB::connection()->getPdo();
-    } catch (Throwable $e) {
-        if (str_contains($e->getMessage(), 'Unknown database')) {
-            config(['database.connections.mysql.database' => null]);
-            DB::purge('mysql');
-            DB::statement('CREATE DATABASE IF NOT EXISTS anganansoft');
-            config(['database.connections.mysql.database' => 'anganansoft']);
-            DB::purge('mysql');
-            DB::reconnect('mysql');
-        }
-    }
 }
 
 // 6. Protected diagnostic endpoint for TiDB Cloud

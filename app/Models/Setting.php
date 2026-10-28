@@ -14,12 +14,17 @@ class Setting extends Model
         'value',
     ];
 
+    /** @var array<string, ?string>|null */
+    protected static ?array $cachedSettings = null;
+
     public static function get(string $key, ?string $default = null): ?string
     {
         try {
-            $setting = static::where('key', $key)->first();
+            if (static::$cachedSettings === null) {
+                static::$cachedSettings = static::pluck('value', 'key')->all();
+            }
 
-            return $setting ? $setting->value : $default;
+            return static::$cachedSettings[$key] ?? $default;
         } catch (\Throwable $e) {
             return $default;
         }
@@ -31,5 +36,9 @@ class Setting extends Model
             ['key' => $key],
             ['value' => $value]
         );
+
+        if (static::$cachedSettings !== null) {
+            static::$cachedSettings[$key] = $value;
+        }
     }
 }

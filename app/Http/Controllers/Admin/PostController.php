@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -139,6 +140,8 @@ class PostController extends Controller
         // Process Tags
         $this->syncTags($post, $request->input('tags'));
 
+        Cache::forget('blog_sidebar_data');
+
         return redirect()->route('admin.posts.index')->with('success', 'Postingan baru berhasil diterbitkan!');
     }
 
@@ -240,6 +243,8 @@ class PostController extends Controller
 
         $this->syncTags($post, $request->input('tags'));
 
+        Cache::forget('blog_sidebar_data');
+
         return redirect()->route('admin.posts.index')->with('success', 'Postingan berhasil diperbarui!');
     }
 
@@ -253,6 +258,8 @@ class PostController extends Controller
         }
 
         $post->delete();
+
+        Cache::forget('blog_sidebar_data');
 
         return redirect()->route('admin.posts.index')->with('success', 'Postingan berhasil dihapus.');
     }

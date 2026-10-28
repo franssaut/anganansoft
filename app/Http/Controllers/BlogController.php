@@ -8,6 +8,7 @@ use App\Models\Post;
 use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class BlogController extends Controller
@@ -19,16 +20,20 @@ class BlogController extends Controller
      */
     protected function getSidebarData(): array
     {
-        return [
-            'breakingPosts' => Post::published()->latest()->take(5)->get(),
-            'featuredPost' => Post::published()->where('is_featured', true)->latest()->first() ?? Post::published()->latest()->first(),
-            'popularPosts' => Post::published()->orderByDesc('views')->take(5)->get(),
-            'categories' => Category::withCount(['posts' => function ($q) {
-                $q->where('status', 'published');
-            }])->get(),
-            'recentPosts' => Post::published()->latest()->take(5)->get(),
-            'tags' => Tag::has('posts')->get(),
-        ];
+        return Cache::remember('blog_sidebar_data', 120, function () {
+            $recent = Post::published()->latest()->take(5)->get();
+
+            return [
+                'breakingPosts' => $recent,
+                'featuredPost' => Post::published()->where('is_featured', true)->latest()->first() ?? $recent->first(),
+                'popularPosts' => Post::published()->orderByDesc('views')->take(5)->get(),
+                'categories' => Category::withCount(['posts' => function ($q) {
+                    $q->where('status', 'published');
+                }])->get(),
+                'recentPosts' => $recent,
+                'tags' => Tag::has('posts')->get(),
+            ];
+        });
     }
 
     /**
