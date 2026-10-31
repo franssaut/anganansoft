@@ -65,7 +65,7 @@ class PostController extends Controller
             'category_id' => 'required|exists:categories,id',
             'excerpt' => 'nullable|string|max:500',
             'content' => 'required|string',
-            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:10240',
+            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:2048',
             'featured_image_url' => 'nullable|url:http,https|max:2000',
             'software_version' => 'nullable|string|max:100',
             'file_size' => 'nullable|string|max:50',
@@ -168,7 +168,7 @@ class PostController extends Controller
             'category_id' => 'required|exists:categories,id',
             'excerpt' => 'nullable|string|max:500',
             'content' => 'required|string',
-            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:10240',
+            'featured_image_file' => 'nullable|file|mimes:jpeg,png,jpg,webp,gif,svg|max:2048',
             'featured_image_url' => 'nullable|url:http,https|max:2000',
             'software_version' => 'nullable|string|max:100',
             'file_size' => 'nullable|string|max:50',
@@ -308,11 +308,13 @@ class PostController extends Controller
                 if ($img !== false) {
                     $origWidth = imagesx($img);
                     $origHeight = imagesy($img);
-                    $maxWidth = 1000;
+                    $maxWidth = 800;
+                    $maxHeight = 600;
 
-                    if ($origWidth > $maxWidth) {
-                        $newWidth = $maxWidth;
-                        $newHeight = (int) ($origHeight * ($maxWidth / $origWidth));
+                    $ratio = min($maxWidth / max($origWidth, 1), $maxHeight / max($origHeight, 1), 1.0);
+                    if ($ratio < 1.0) {
+                        $newWidth = (int) round($origWidth * $ratio);
+                        $newHeight = (int) round($origHeight * $ratio);
                         $resized = imagecreatetruecolor($newWidth, $newHeight);
 
                         imagealphablending($resized, false);
@@ -327,11 +329,11 @@ class PostController extends Controller
 
                     ob_start();
                     if (function_exists('imagewebp')) {
-                        imagewebp($img, null, 85);
+                        imagewebp($img, null, 75);
                         $contents = ob_get_clean();
                         $mime = 'image/webp';
                     } else {
-                        imagejpeg($img, null, 85);
+                        imagejpeg($img, null, 75);
                         $contents = ob_get_clean();
                         $mime = 'image/jpeg';
                     }

@@ -9,7 +9,9 @@ use App\Models\Tag;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class BlogController extends Controller
 {
@@ -171,6 +173,42 @@ class BlogController extends Controller
 
         return redirect()->to(route('blog.show', $post->slug).'#comments')
             ->with('success', $message);
+    }
+
+    /**
+     * Serve post featured image (extracting binary from data URI or storage).
+     */
+    public function image(Post $post): Response
+    {
+        if (empty($post->featured_image)) {
+            abort(404);
+        }
+
+        if (Str::startsWith($post->featured_image, 'data:image/')) {
+            if (preg_match('/^data:([^;]+);base64,(.*)$/s', $post->featured_image, $matches)) {
+                $mimeType = $matches[1];
+                $binary = base64_decode($matches[2]);
+
+                return response($binary, 200, [
+                    'Content-Type' => $mimeType,
+                    'Content-Length' => strlen($binary),
+                    'Cache-Control' => 'public, max-age=604800, stale-while-revalidate=86400',
+                ]);
+            }
+        }
+
+        if (Str::startsWith($post->featured_image, ['http://', 'https://'])) {
+            return redirect()->away($post->featured_image);
+        }
+
+        $filePath = storage_path('app/public/'.$post->featured_image);
+        if (file_exists($filePath)) {
+            $mime = mime_content_type($filePath) ?: 'application/octet-stream';
+
+            return response()->file($filePath, ['Content-Type' => $mime]);
+        }
+
+        abort(404);
     }
 
     /**

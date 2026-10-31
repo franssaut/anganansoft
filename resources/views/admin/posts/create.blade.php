@@ -193,7 +193,7 @@
                         <div class="form-group">
                             <label class="form-label">Upload Gambar dari Komputer</label>
                             <input type="file" name="featured_image_file" class="form-control" accept="image/*" onchange="previewUploadImage(this)">
-                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Format: JPG, PNG, WebP, GIF (Maks. 10MB). Otomatis dioptimalkan.</div>
+                            <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Format: JPG, PNG, WebP, GIF (Maks. 2MB). Otomatis dioptimalkan.</div>
                         </div>
 
                         <div style="text-align:center; font-size:11.5px; color:var(--text-muted); margin:10px 0;">— ATAU —</div>

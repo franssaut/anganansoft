@@ -290,7 +290,11 @@ class BlogAndAdminTest extends TestCase
         $created = Post::where('slug', 'post-with-uploaded-image')->first();
         $this->assertNotNull($created);
         $this->assertStringStartsWith('data:image/', $created->featured_image);
-        $this->assertStringStartsWith('data:image/', $created->image_url);
+        $this->assertEquals(route('blog.post.image', $created->id), $created->image_url);
+
+        $imageResponse = $this->get(route('blog.post.image', $created->id));
+        $imageResponse->assertOk();
+        $imageResponse->assertHeader('Cache-Control', 'max-age=604800, public, stale-while-revalidate=86400');
     }
 
     public function test_admin_can_create_post_with_image_url_and_inline_data_image(): void

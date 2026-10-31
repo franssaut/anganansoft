@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::get('/', [BlogController::class, 'index'])->name('blog.index');
 Route::get('/post/{slug}', [BlogController::class, 'show'])->name('blog.show');
+Route::get('/post-image/{post}', [BlogController::class, 'image'])->name('blog.post.image');
 Route::post('/post/{slug}/comment', [BlogController::class, 'storeComment'])
     ->middleware('throttle:5,1')
     ->name('blog.comment');
